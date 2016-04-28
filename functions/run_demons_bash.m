@@ -42,7 +42,8 @@ function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
 		fprintf(fid,['module load matlab/R2016a\n']);
 		fprintf(fid,['\n']);
 		fprintf(fid,['matlab -nosplash -nodesktop -noFigureWindows << EOF\n']);   % was matlab -nodisplay but that stopped working on cluster.
-		fprintf(fid,['\n']);
+		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/scripts''])\n']);
+		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/functions''])\n']);
 		fprintf(fid,['cd(', mat2str(batchDir), ');\n']);
 		fprintf(fid,['parallel_demon_reg_test(',num2str(nNmjs),',',num2str(nFrames),',',mat2str(batchFile),');\n']);
 		fprintf(fid,['batch', num2str(nodeNum),'Complete=true\n']);

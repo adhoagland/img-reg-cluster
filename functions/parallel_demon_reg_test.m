@@ -20,13 +20,13 @@ function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
 	    for nmjNum = 1:nNmjs   
 		nmj = batchNmjs{nmjNum};
 		localMaxFrame = max(nmj,[],3);
-		localMaxFrame = enhanceContrastDemon(localMaxFrame);
+		localMaxFrame = enhanceContrastForDemon(localMaxFrame);
 		localMaxFrameGPU = gpuArray(localMaxFrame);
 
 		disp(['Starting Demon NMJ #: ',num2str(nmjNum)])
 
 		refFrame = refFrames{nmjNum};
-		refFrame = enhanceContrastDemon(refFrame);
+		refFrame = enhanceContrastForDemon(refFrame);
 		refFrameGPU = gpuArray(refFrame);
 
 		demonDispFields = cell(nFrames,1);
@@ -36,7 +36,7 @@ function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
 		tic
 		for qq = 1:nFrames
 		    frameNorm = nmj(:,:,qq);
-		    movingFrame=enhanceContrastDemon(frameNorm);
+		    movingFrame=enhanceContrastForDemon(frameNorm);
 		
 		    %Pass Arrays to GPU
 		    movingFrameGPU = gpuArray(movingFrame);
@@ -45,9 +45,9 @@ function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
 		    %Apply Demons Transformation
 		    [dispField,movingRegGPU] = imregdemons(movingRegGPU,refFrameGPU,[1],'PyramidLevels',1);
 
-		    for i=1:10
-		    [localDispField,movingRegGPU] = imregdemons(movingRegGPU,localMaxFrameGPU,[20,20,10,1,1],'PyramidLevels',5);
-		    [globalDispField,movingRegGPU] = imregdemons(movingRegGPU,refFrameGPU,[20,20,10,1,1],'PyramidLevels',5);		    
+		    for i=1:4
+		    [localDispField,movingRegGPU] = imregdemons(movingRegGPU,localMaxFrameGPU,[200,100,10,1],'PyramidLevels',4);
+		    [globalDispField,movingRegGPU] = imregdemons(movingRegGPU,refFrameGPU,[200,100,10,1],'PyramidLevels',4);		    
 		    dispField = dispField + localDispField + globalDispField;
 	    	    end
 
@@ -76,7 +76,7 @@ function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
 		disp(['Starting Demon NMJ #: ',num2str(nmjNum)])
 		
 		refFrame = refFrames{nmjNum};
-		refFrame = enhanceContrastDemon(refFrame);
+		refFrame = enhanceContrastForDemon(refFrame);
 
 		demonDispFields = cell(nFrames,1);
 		demon=zeros(size(refFrame,1),size(refFrame,2),nFrames,'uint16');
@@ -84,7 +84,7 @@ function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
 		tic
 		for qq = 1:nFrames
 		    frameNorm = nmj(:,:,qq);
-		    movingFrame=enhanceContrastDemon(frameNorm);
+		    movingFrame=enhanceContrastForDemon(frameNorm);
 		    
 		    %Apply Demons Transformation
 		    [dField,~] = imregdemons(movingFrame,refFrame,[400,200,100],'PyramidLevels',3,'DisplayWaitbar',false);

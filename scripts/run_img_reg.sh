@@ -16,22 +16,25 @@
 
 module load matlab/R2016a
 matlab -nosplash -nodisplay << EOF\n
-skipTrack=true;\n
-skipAffine=true;\n
-[moviesToRegisterDir,outputDir] = choose_dirs();\n
-[fileNames,roiFullFiles,cziFullFiles,nMovies] = load_mov_names(moviesToRegisterDir);\n
-\n
-if exist('skipAffine');\n
-	skipAffine = skipAffine;\n
-else;\n
-	skipAffine = false;\n
-end;\n
-\n
-for movieNum=1:nMovies;\n
-	fileName = fileNames{movieNum};\n
-	roiFile = roiFullFiles{movieNum};\n
-	cziFile = cziFullFiles{movieNum};\n
-	postSelectMovReg(moviesToRegisterDir,outputDir,fileName,roiFile,cziFile,skipTrack,skipAffine);\n
-end;\n
-exit\n
+addpath([getenv('CODE_PATH'), '/img-reg-cluster/functions'])
+addpath([getenv('CODE_PATH'), '/img-reg-cluster/scripts'])
+
+skipTrack=true;
+skipAffine=true;
+[moviesToRegisterDir,outputDir] = choose_dirs();
+[fileNames,roiFullFiles,cziFullFiles,nMovies] = load_mov_names(moviesToRegisterDir);
+
+if exist('skipAffine');
+	skipAffine = skipAffine;
+else;
+	skipAffine = false;
+end;
+
+for movieNum=1:nMovies;
+	fileName = fileNames{movieNum};
+	roiFile = roiFullFiles{movieNum};
+	cziFile = cziFullFiles{movieNum};
+	postSelectMovReg(moviesToRegisterDir,outputDir,fileName,roiFile,cziFile,skipTrack,skipAffine);
+end;
+exit
 EOF\n

@@ -2,6 +2,9 @@ function batchDir = save_batches(nmjMovie,movOutputDir, numOfNodes, nNmjs, nFram
 	
 	batchDir= fullfile(movOutputDir,'batches')
 	mkdir(batchDir)
+	
+	cd(batchDir)
+	!rm *
 
 	for nodeNum = 1:numOfNodes
 		batchNum = nodeNum
