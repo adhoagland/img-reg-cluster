@@ -1,13 +1,22 @@
 % Created by: Bernal Jimenez
 % 03/17/2016
 
-function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
+function [] = parallel_demon_reg_test(nNmjs,nFrames,batchNum,batchFile,batchDir)
 
     load(batchFile)
-
+    load([batchDir,'/affineTform.mat'])
+    
     demonized_mov = cell(nNmjs,1);
     disp_fields = cell(nNmjs,1);
 
+    [localOptimizer, metric] = imregconfig('monomodal');
+    [globalOptimizer,~] = imregconfig('monomodal');
+    globalOptimizer.MaximumStepLength = 0.001;
+    localOptimizer.MinimumStepLength = 1e-4;
+    globalOptimizer.MinimumStepLength = 1e-4;
+    localOptimizer.RelaxationFactor = 0.8;
+    globalOptimizer.RelaxationFactor = 0.8;
+    
     try
 	gpuDevice
 	gpuEnabled = true
@@ -15,92 +24,87 @@ function [] = parallel_demon_reg_test(nNmjs,nFrames,batchFile)
 	gpuEnabled = false
     end
     
-    if gpuEnabled
+    for nmjNum = 1:nNmjs   
+	nmj = batchNmjs{nmjNum};
 
-	    for nmjNum = 1:nNmjs   
-		nmj = batchNmjs{nmjNum};
-		localMaxFrame = max(nmj,[],3);
-		localMaxFrame = enhanceContrastForDemon(localMaxFrame);
-		localMaxFrameGPU = gpuArray(localMaxFrame);
+	batchTform = transformList{nmjNum}{batchNum};
 
-		disp(['Starting Demon NMJ #: ',num2str(nmjNum)])
+	refFrame = refFrames{nmjNum};
+	refFrameLocal = max(nmj,[],3);
 
-		refFrame = refFrames{nmjNum};
-		refFrame = enhanceContrastForDemon(refFrame);
-		refFrameGPU = gpuArray(refFrame);
+	disp(['Starting Demon NMJ #: ',num2str(nmjNum)])
 
-		demonDispFields = cell(nFrames,1);
-		demon=zeros(size(refFrame,1),size(refFrame,2),nFrames,'uint16');
-		demonGPU = gpuArray(demon);
-		
-		tic
-		for qq = 1:nFrames
-		    frameNorm = nmj(:,:,qq);
-		    movingFrame=enhanceContrastForDemon(frameNorm);
-		
-		    %Pass Arrays to GPU
-		    movingFrameGPU = gpuArray(movingFrame);
-		    movingRegGPU = movingFrameGPU;
+	demonDispFields = cell(nFrames,1);
+	demon=zeros(size(refFrame,1),size(refFrame,2),nFrames,'uint16');
+	
+	if gpuEnabled
+	demon = gpuArray(demon);
+	end
 
-		    %Apply Demons Transformation
-		    [dispField,movingRegGPU] = imregdemons(movingRegGPU,refFrameGPU,[1],'PyramidLevels',1);
+	tic
+	for qq = 1:nFrames
+	    movingFrame = nmj(:,:,qq);
 
-		    for i=1:4
-		    [localDispField,movingRegGPU] = imregdemons(movingRegGPU,localMaxFrameGPU,[200,100,10,1],'PyramidLevels',4);
-		    [globalDispField,movingRegGPU] = imregdemons(movingRegGPU,refFrameGPU,[200,100,10,1],'PyramidLevels',4);		    
-		    dispField = dispField + localDispField + globalDispField;
-	    	    end
+	    if gpuEnabled
+	    refFrame = gather(refFrame);
+	    refFrameLocal = gather(refFrameLocal);
+    	    end
 
-		    dFieldGPU = gather(dispField);
-		    movingRegGPU = imwarp(frameNorm,dFieldGPU);
+	    %Demons Enhanced Contrast
+	    enhancedMovingFrame=enhanceContrastDemon(movingFrame);
+	    refFrame = enhanceContrastDemon(refFrame);
+	    refFrameLocal = enhanceContrastDemon(refFrameLocal);
 	    
-		    demonDispFields{qq,1} = dFieldGPU; 
-		    demonGPU(:,:,qq)=movingRegGPU;
-		    disp(['NMJ #: ',num2str(nmjNum),' Frame #: ',num2str(qq)]);   
-	  
-		end
-		demonTime = toc
-
-		demonized_mov{nmjNum,1}=gather(demonGPU);
-		disp_fields{nmjNum,1}=demonDispFields; 
-	        
-		demon_variable = genvarname(['demonized_mov',num2str(batchNum)])
-	        eval([demon_variable '= demonized_mov'])
-		
-		save(batchFile,['demonized_mov',num2str(batchNum)],'disp_fields','demonTime','-append')	
-	   end
-
-   else
-	   for nmjNum = 1:nNmjs   
-		nmj = batchNmjs{nmjNum};
-		disp(['Starting Demon NMJ #: ',num2str(nmjNum)])
-		
-		refFrame = refFrames{nmjNum};
-		refFrame = enhanceContrastForDemon(refFrame);
-
-		demonDispFields = cell(nFrames,1);
-		demon=zeros(size(refFrame,1),size(refFrame,2),nFrames,'uint16');
-		
-		tic
-		for qq = 1:nFrames
-		    frameNorm = nmj(:,:,qq);
-		    movingFrame=enhanceContrastForDemon(frameNorm);
-		    
-		    %Apply Demons Transformation
-		    [dField,~] = imregdemons(movingFrame,refFrame,[400,200,100],'PyramidLevels',3,'DisplayWaitbar',false);
-		    movingReg = imwarp(frameNorm,dField);
+	    %Apply Affine Transformation
+	    %localAffineTransform = imregtform(enhancedMovingFrame,refFrameLocal,'affine',localOptimizer,metric);
 	    
-		    demonDispFields{qq,1} = dField; 
-		    demon(:,:,qq)=movingReg;
-		    disp(['NMJ #: ',num2str(nmjNum),' Frame #: ',num2str(qq)]);   
-		    demonframetime = toc 
-		end
-		demonTime = toc
-		
-		demonized_mov{nmjNum,1} = demon
-		disp_fields{nmjNum,1} = demonDispFields;     
+	    try
+	    globalAffineTransform= imregtform(enhancedMovingFrame,refFrame,'affine',globalOptimizer,metric,'InitialTransformation',batchTform); 
+	    catch
+	    optimizer.MaximumStepLength = 0.00005
+	    globalAffineTransform= imregtform(enhancedMovingFrame,refFrame,'affine',globalOptimizer,metric,'InitialTransformation',batchTform); 
+	    end
+	    
+	    Rfixed = imref2d(size(nmj(:,:,1)));
+	    movingReg = imwarp(movingFrame,globalAffineTransform,'OutputView',Rfixed);
+	    enhancedMovingFrame = imwarp(enhancedMovingFrame,globalAffineTransform,'OutputView',Rfixed);
 
-		save(batchFile,'demonized_mov','disp_fields','demonTime','-append')
-	   end
-   end
+	    %Pass Arrays to GPU
+	    if gpuEnabled
+	    refFrame = gpuArray(refFrame);
+	    refFrameLocal = gpuArray(refFrameLocal);
+	    enhancedMovingReg = gpuArray(enhancedMovingFrame);
+	    end
 
+	    %Apply Demons Transformation
+	    %[localDispField,enhancedMovingReg] = imregdemons(enhancedMovingReg,refFrameLocal,[100,50,1,1],'PyramidLevels',4);
+	    %[globalDispField,enhancedMovingReg] = imregdemons(enhancedMovingReg,refFrame,[300,100,1,1],'PyramidLevels',4);		    
+	    %dispField = localDispField + globalDispField;
+	    
+	    if gpuEnabled
+	    %dispField = gather(globalDispField);
+    	    end
+	    
+	    %movingReg = imwarp(movingReg,dispField);
+	    %demonDispFields{qq,1} = dFieldGPU; 
+
+
+	    demon(:,:,qq)= movingReg;
+
+	    disp(['NMJ #: ',num2str(nmjNum),' Frame #: ',num2str(qq)]);   
+  
+	end
+	demonTime = toc
+
+	if gpuEnabled
+	demon = gather(demon);
+	end
+
+	demonized_mov{nmjNum,1}=demon;
+	disp_fields{nmjNum,1}=demonDispFields; 
+	
+	demon_variable = genvarname(['demonized_mov',num2str(batchNum)])
+	eval([demon_variable '= demonized_mov'])
+	
+	save(batchFile,['demonized_mov',num2str(batchNum)],'disp_fields','demonTime','-append')	
+    end

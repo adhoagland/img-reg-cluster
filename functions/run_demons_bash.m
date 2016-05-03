@@ -18,9 +18,9 @@ function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
 		fprintf(fid,['# Partition:\n']);
 		fprintf(fid,['#SBATCH -p cortex\n']);
 		fprintf(fid,['#\n']);
-		fprintf(fid,['# Constrain Nodes:\n']);
-		fprintf(fid,['#SBATCH --constraint=cortex_k40\n']);
-		fprintf(fid,['#\n']);
+		%fprintf(fid,['# Constrain Nodes:\n']);
+		%fprintf(fid,['#SBATCH --constraint=cortex_k40\n']);
+		%fprintf(fid,['#\n']);
 		fprintf(fid,['# Processors:\n']);
 		fprintf(fid,['#SBATCH -n 1\n']);
 		
@@ -33,7 +33,7 @@ function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
 		fprintf(fid,['#SBATCH --mem-per-cpu=2000\n']);
 		fprintf(fid,['#\n']);
 		fprintf(fid,['# Wall clock limit:\n']);
-		fprintf(fid,['#SBATCH --time=00:30:00\n']);
+		fprintf(fid,['#SBATCH --time=01:30:00\n']);
 		fprintf(fid,['#\n']);
 		fprintf(fid,['#\n']);
 		fprintf(fid,['#SBATCH -o output',num2str(nodeNum),'.out\n']);
@@ -45,7 +45,7 @@ function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
 		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/scripts''])\n']);
 		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/functions''])\n']);
 		fprintf(fid,['cd(', mat2str(batchDir), ');\n']);
-		fprintf(fid,['parallel_demon_reg_test(',num2str(nNmjs),',',num2str(nFrames),',',mat2str(batchFile),');\n']);
+		fprintf(fid,['parallel_demon_reg_test(',num2str(nNmjs),',',num2str(nFrames),',',num2str(nodeNum),',',mat2str(batchFile),',',mat2str(batchDir),');\n']);
 		fprintf(fid,['batch', num2str(nodeNum),'Complete=true\n']);
 		fprintf(fid,['save(''completed_batch',num2str(nodeNum),'.mat'',''batch',num2str(nodeNum),'Complete'');\n']);
 		fprintf(fid,['exit\n']);

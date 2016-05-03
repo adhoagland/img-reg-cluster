@@ -66,17 +66,20 @@ if exist('skipDemon')
 else
     % Loads variables
     load(roiFile);
-    numOfNodes = 20
+    numOfNodes = 50
     
     % Loads affined nmj movies into array 
     takeFromTracked = true
     nmjMovie = load_nmjs(nNmjs,movOutputDir, trackedFileNames,takeFromTracked);
-    
+   
+    transformList = find_affine_tform(numOfNodes,nFrames,maxFrameNum,nNmjs,nmjMovie)
+ 
     nFramesPerBatch = nFrames/numOfNodes;
     save(roiFile,'nFramesPerBatch','-append')
     
-    batchDir = save_batches(nmjMovie,movOutputDir,numOfNodes,nNmjs,nFramesPerBatch,maxFrameNum)
-    
+    batchDir = save_batches(nmjMovie,movOutputDir,numOfNodes,nNmjs,nFramesPerBatch,maxFrameNum) 
+    save([batchDir,'/affineTform'],'transformList')
+
     completedBatches = 0
     save(roiFile,'completedBatches','-append') 
     run_demons_bash(batchDir,nNmjs,nFramesPerBatch,numOfNodes)
@@ -84,4 +87,5 @@ else
     join_movies(batchDir,nNmjs,movOutputDir,numOfNodes) 
 end
 
+save_comp_script
 disp('Success')

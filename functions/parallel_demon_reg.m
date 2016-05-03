@@ -1,11 +1,7 @@
 % Created by: Bernal Jimenez
 % 03/17/2016
 
-function [] = parallel_demon_reg(roiFile,batchFile)
-
-    params = load(roiFile);
-    nNmjs = params.nNmjs;
-    nFrames = params.nFramesPerBatch;
+function [] = parallel_demon_reg(nNmjs,nFrames,batchFile)
 
     load(batchFile)
 
