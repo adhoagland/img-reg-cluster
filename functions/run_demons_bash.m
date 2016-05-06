@@ -2,10 +2,10 @@
 %4/14/2016
 
 
-function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
+function [] = run_demons_bash(batchDir,nNmjs,numNodes,sampleFactor)
 	
 	cd(batchDir)
-	for nodeNum=1:numOfNodes
+	for nodeNum=1:numNodes
 		
 		batchFile = ['Batch',num2str(nodeNum),'.mat']
 
@@ -19,16 +19,16 @@ function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
 		fprintf(fid,['#SBATCH -p cortex\n']);
 		fprintf(fid,['#\n']);
 		%fprintf(fid,['# Constrain Nodes:\n']);
-		%fprintf(fid,['#SBATCH --constraint=cortex_k40\n']);
+		%fprintf(fid,['#SBATCH --constraint=cortex_nogpu\n']);
 		%fprintf(fid,['#\n']);
 		fprintf(fid,['# Processors:\n']);
 		fprintf(fid,['#SBATCH -n 1\n']);
 		
 		fprintf(fid,['#\n']);
-		fprintf(fid,['# Exclude the Following Nodes:\n']);
-		fprintf(fid,['#SBATCH -x n0012.cortex0\n']);
+		%fprintf(fid,['# Exclude the Following Nodes:\n']);
+		%fprintf(fid,['#SBATCH -x n0012.cortex0\n']);
 		%fprintf(fid,['#SBATCH -x n0002.cortex0,n0003.cortex0,n0004.cortex0,n0005.cortex0,n0006.cortex0,n0007.cortex0,n0008.cortex0,n0009.cortex0,n0010.cortex0,n0011.cortex0\n']);
-		fprintf(fid,['#\n']);
+		%fprintf(fid,['#\n']);
 		fprintf(fid,['# Memory:\n']);
 		fprintf(fid,['#SBATCH --mem-per-cpu=2000\n']);
 		fprintf(fid,['#\n']);
@@ -45,7 +45,7 @@ function [] = run_demons_bash(batchDir,nNmjs,nFrames,numOfNodes)
 		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/scripts''])\n']);
 		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/functions''])\n']);
 		fprintf(fid,['cd(', mat2str(batchDir), ');\n']);
-		fprintf(fid,['parallel_demon_reg_test(',num2str(nNmjs),',',num2str(nFrames),',',num2str(nodeNum),',',mat2str(batchFile),',',mat2str(batchDir),');\n']);
+		fprintf(fid,['parallel_demon_reg_test(',num2str(nodeNum),',',mat2str(batchFile),',',mat2str(batchDir),',',num2str(sampleFactor),');\n']);
 		fprintf(fid,['batch', num2str(nodeNum),'Complete=true\n']);
 		fprintf(fid,['save(''completed_batch',num2str(nodeNum),'.mat'',''batch',num2str(nodeNum),'Complete'');\n']);
 		fprintf(fid,['exit\n']);

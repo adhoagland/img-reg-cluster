@@ -8,11 +8,15 @@
 # Wall clock limit:
 #SBATCH --time=2:00:00
 #
+# Constraint:
+#SBATCH -x n0012.cortex0,n0002.cortex0,
+#
 # Memory:
-#SBATCH --mem-per-cpu=10000
+#SBATCH --mem-per-cpu=15000
 #
 # Constraint:
 #SBATCH --constraint=cortex_nogpu
+#
 
 module load matlab/R2016a
 matlab -nosplash -nodisplay << EOF\n
