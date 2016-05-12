@@ -18,9 +18,9 @@ function [] = run_demons_bash(batchDir,nNmjs,numNodes,sampleFactor)
 		fprintf(fid,['# Partition:\n']);
 		fprintf(fid,['#SBATCH -p cortex\n']);
 		fprintf(fid,['#\n']);
-		%fprintf(fid,['# Constrain Nodes:\n']);
-		%fprintf(fid,['#SBATCH --constraint=cortex_nogpu\n']);
-		%fprintf(fid,['#\n']);
+		fprintf(fid,['# Constrain Nodes:\n']);
+		fprintf(fid,['#SBATCH --constraint=cortex_nogpu\n']);
+		fprintf(fid,['#\n']);
 		fprintf(fid,['# Processors:\n']);
 		fprintf(fid,['#SBATCH -n 1\n']);
 		
@@ -45,7 +45,7 @@ function [] = run_demons_bash(batchDir,nNmjs,numNodes,sampleFactor)
 		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/scripts''])\n']);
 		fprintf(fid,['addpath([getenv(''CODE_PATH''),''/img-reg-cluster/functions''])\n']);
 		fprintf(fid,['cd(', mat2str(batchDir), ');\n']);
-		fprintf(fid,['parallel_demon(',num2str(nodeNum),',',mat2str(batchFile),',',mat2str(batchDir),',',num2str(sampleFactor),');\n']);
+		fprintf(fid,['parallel_affine(',num2str(nodeNum),',',mat2str(batchFile),',',mat2str(batchDir),',',num2str(sampleFactor),');\n']);
 		fprintf(fid,['batch', num2str(nodeNum),'Complete=true\n']);
 		fprintf(fid,['save(''completed_batch',num2str(nodeNum),'.mat'',''batch',num2str(nodeNum),'Complete'');\n']);
 		fprintf(fid,['exit\n']);
